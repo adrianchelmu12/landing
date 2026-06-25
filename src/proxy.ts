@@ -5,6 +5,7 @@ const isApiRoute = createRouteMatcher(["/api/(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isApiRoute(req)) {
+    if (req.method === "OPTIONS") return;
     const { userId } = await auth();
     if (!userId) {
       return Response.json({ error: "Neautentificat" }, { status: 401 });
