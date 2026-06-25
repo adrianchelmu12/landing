@@ -70,7 +70,7 @@ export function TeamSection() {
       }
 
       const inv = await res.json();
-      setInvitations((prev) => [...prev, { ...inv, status: "pending", createdAt: Date.now() }]);
+      setInvitations((prev) => [...prev, { ...inv, status: "pending", createdAt: Date.now(), role: role === "admin" ? "Administrator" : role === "manager" ? "Manager" : "Agent" }]);
       setEmail("");
       setMessage("Invitație trimisă.");
     } catch (err: any) {
