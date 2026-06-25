@@ -32,7 +32,7 @@ export function TeamSection() {
 
   const loadTeam = async () => {
     try {
-      const res = await fetch("/api/team");
+      const res = await fetch("/api/team", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setMembers(data.members || []);
@@ -60,13 +60,18 @@ export function TeamSection() {
     try {
       const res = await fetch("/api/team", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), role }),
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Eroare la trimiterea invitației.");
+        let errorMsg = `Eroare ${res.status}`;
+        try {
+          const data = await res.json();
+          errorMsg = data.error || errorMsg;
+        } catch {}
+        throw new Error(errorMsg);
       }
 
       const inv = await res.json();
@@ -82,7 +87,7 @@ export function TeamSection() {
 
   const handleDeleteInvitation = async (invitationId: string) => {
     try {
-      const res = await fetch(`/api/team?invitationId=${invitationId}`, { method: "DELETE" });
+      const res = await fetch(`/api/team?invitationId=${invitationId}`, { method: "DELETE", credentials: "include" });
       if (res.ok) {
         setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
         setMessage("Invitația a fost revocată.");
