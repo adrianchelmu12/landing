@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useOrganizationList } from "@clerk/nextjs";
 
 export function CreateAgencyCard() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { createOrganization } = useOrganizationList();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,16 +19,16 @@ export function CreateAgencyCard() {
     setError("");
 
     try {
-      const res = await fetch("/api/org", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Eroare la crearea agenției.");
+      if (!createOrganization) {
+        throw new Error("Funcția de creare nu este disponibilă. Reîncearcă.");
       }
+      const org = await createOrganization({ name: name.trim() });
+
+      await fetch("/api/org", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId: org.id, name: name.trim(), agencyName: name.trim() }),
+      });
 
       window.location.href = "/dashboard";
     } catch (err: any) {
