@@ -1,15 +1,16 @@
 "use client";
 
-import { useOrganizationList } from "@clerk/nextjs";
+import { useUser, useOrganizationList } from "@clerk/nextjs";
 import { AdminSection } from "@/components/AdminSection";
 import { CreateAgencyCard } from "@/components/CreateAgencyCard";
 
 export default function DashboardPage() {
-  const { isLoaded, userMemberships } = useOrganizationList({
+  const { user, isLoaded: userLoaded } = useUser();
+  const { isLoaded: listLoaded, userMemberships } = useOrganizationList({
     userMemberships: true,
   });
 
-  if (!isLoaded) {
+  if (!userLoaded || !listLoaded) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -17,6 +18,7 @@ export default function DashboardPage() {
     );
   }
 
+  const isSuperAdmin = user?.id === process.env.NEXT_PUBLIC_SUPER_ADMIN_USER_ID;
   const hasOrganization = (userMemberships?.data?.length ?? 0) > 0;
 
   return (
@@ -28,9 +30,9 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {!hasOrganization ? (
-            <CreateAgencyCard />
-          ) : (
+          {isSuperAdmin ? (
+            <AdminSection />
+          ) : (hasOrganization ? (
             <>
               <div className="bg-white rounded-2xl border border-border p-8">
                 <h2 className="text-xl font-semibold text-foreground mb-4">
@@ -53,8 +55,6 @@ export default function DashboardPage() {
                 </a>
               </div>
 
-              <AdminSection />
-
               <div className="bg-white rounded-2xl border border-border p-8">
                 <h2 className="text-xl font-semibold text-foreground mb-4">
                   Abonament
@@ -74,7 +74,9 @@ export default function DashboardPage() {
                 </div>
               </div>
             </>
-          )}
+          ) : (
+            <CreateAgencyCard />
+          ))}
         </div>
 
         <div className="space-y-6">
