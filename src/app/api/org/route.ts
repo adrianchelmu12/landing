@@ -1,12 +1,20 @@
 import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { initDb, upsertOrganization } from "@/db";
+import { neon } from "@neondatabase/serverless";
 
 const getClerkClient = () => createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
 
+function db() {
+  const url = process.env.DATABASE_URL;
+  if (!url) return null;
+  return neon(url);
+}
+
 async function syncToDb(clerkId: string, name: string, metadata: Record<string, unknown>, imageUrl?: string) {
   try {
-    if (!process.env.DATABASE_URL) return;
+    const client = db();
+    if (!client) return;
     await initDb();
     await upsertOrganization({
       clerkId,
@@ -21,6 +29,26 @@ async function syncToDb(clerkId: string, name: string, metadata: Record<string, 
     });
   } catch (err: any) {
     console.error("Neon sync error:", err?.message);
+  }
+}
+
+async function addCreatorAsAgent(userId: string, orgId: string) {
+  try {
+    const client = db();
+    if (!client) return;
+    const clerk = getClerkClient();
+    const user = await clerk.users.getUser(userId);
+    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.emailAddresses[0]?.emailAddress || "Admin";
+    const email = user.emailAddresses[0]?.emailAddress || "";
+    const orgShortId = await client`SELECT short_id FROM organizations WHERE clerk_id = ${orgId}`.then(r => r[0]?.short_id);
+
+    await client`
+      INSERT INTO agenti (org_id, org_short_id, user_id, nume, email, rol)
+      VALUES (${orgId}, ${orgShortId || null}, ${userId}, ${name}, ${email}, 'admin')
+      ON CONFLICT DO NOTHING
+    `;
+  } catch (err: any) {
+    console.error("Agent insert error:", err?.message);
   }
 }
 
@@ -50,6 +78,7 @@ export async function POST(req: Request) {
     } as any);
 
     await syncToDb(org.id, name, { agencyName: name });
+    await addCreatorAsAgent(userId, org.id);
 
     return Response.json(org, { status: 201 });
   } catch (err: any) {
