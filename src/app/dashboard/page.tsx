@@ -3,6 +3,7 @@
 import { useUser, useOrganizationList } from "@clerk/nextjs";
 import { AdminSection } from "@/components/AdminSection";
 import { CreateAgencyCard } from "@/components/CreateAgencyCard";
+import { TeamPanel } from "@/components/TeamPanel";
 
 export default function DashboardPage() {
   const { user, isLoaded: userLoaded } = useUser();
@@ -54,6 +55,8 @@ export default function DashboardPage() {
                   Intră în CRM
                 </a>
               </div>
+
+              <TeamPanel />
 
               <div className="bg-white rounded-2xl border border-border p-8">
                 <h2 className="text-xl font-semibold text-foreground mb-4">
