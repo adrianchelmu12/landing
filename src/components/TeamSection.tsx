@@ -32,7 +32,7 @@ export function TeamSection() {
 
   const loadTeam = async () => {
     try {
-      const res = await fetch("/api/org/members");
+      const res = await fetch("/api/team");
       if (res.ok) {
         const data = await res.json();
         setMembers(data.members || []);
@@ -58,7 +58,7 @@ export function TeamSection() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/org/members", {
+      const res = await fetch("/api/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), role }),
@@ -82,7 +82,7 @@ export function TeamSection() {
 
   const handleDeleteInvitation = async (invitationId: string) => {
     try {
-      const res = await fetch(`/api/org/members?invitationId=${invitationId}`, { method: "DELETE" });
+      const res = await fetch(`/api/team?invitationId=${invitationId}`, { method: "DELETE" });
       if (res.ok) {
         setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
         setMessage("Invitația a fost revocată.");
