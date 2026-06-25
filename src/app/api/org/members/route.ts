@@ -40,6 +40,17 @@ function roleLabel(role: string, customRole?: string) {
   return role === "basic_member" ? "Agent" : role;
 }
 
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+}
+
 export async function DELETE(req: Request) {
   const { userId, orgId } = await auth();
   if (!userId) return Response.json({ error: "Neautentificat" }, { status: 401 });
