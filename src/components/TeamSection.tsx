@@ -26,6 +26,7 @@ export function TeamSection() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("agent");
   const [inviting, setInviting] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -60,7 +61,7 @@ export function TeamSection() {
       const res = await fetch("/api/org/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), role: "basic_member" }),
+        body: JSON.stringify({ email: email.trim(), role }),
       });
 
       if (!res.ok) {
@@ -69,7 +70,7 @@ export function TeamSection() {
       }
 
       const inv = await res.json();
-      setInvitations((prev) => [...prev, { ...inv, status: "pending", createdAt: Date.now(), role: "basic_member" }]);
+      setInvitations((prev) => [...prev, { ...inv, status: "pending", createdAt: Date.now() }]);
       setEmail("");
       setMessage("Invitație trimisă.");
     } catch (err: any) {
@@ -131,6 +132,16 @@ export function TeamSection() {
           disabled={inviting}
           className="flex-1 px-4 py-3 rounded-xl border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          disabled={inviting}
+          className="px-3 py-3 rounded-xl border border-border text-sm text-foreground bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 shrink-0"
+        >
+          <option value="agent">Agent</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Administrator</option>
+        </select>
         <button
           type="submit"
           disabled={inviting || !email.trim()}
@@ -194,7 +205,7 @@ export function TeamSection() {
                 <p className="text-xs text-muted truncate">{member.email}</p>
               </div>
               <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium capitalize shrink-0">
-                {member.role === "admin" ? "Admin" : "Agent"}
+                {member.role}
               </span>
             </div>
           ))}
