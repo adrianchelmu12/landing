@@ -33,6 +33,7 @@ async function syncToDb(clerkId: string, name: string, metadata: Record<string, 
 }
 
 async function addCreatorAsAgent(userId: string, orgId: string) {
+  if (!process.env.DATABASE_URL) return;
   try {
     const client = db();
     if (!client) return;
@@ -40,15 +41,18 @@ async function addCreatorAsAgent(userId: string, orgId: string) {
     const user = await clerk.users.getUser(userId);
     const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.emailAddresses[0]?.emailAddress || "Admin";
     const email = user.emailAddresses[0]?.emailAddress || "";
-    const orgShortId = await client`SELECT short_id FROM organizations WHERE clerk_id = ${orgId}`.then(r => r[0]?.short_id);
 
+    const orgShortId = await client`SELECT short_id FROM organizations WHERE clerk_id = ${orgId}`.then(r => r[0]?.short_id);
+    console.log("Adding creator as admin:", { userId, orgId, name, email, orgShortId });
+
+    await initDb();
     await client`
       INSERT INTO agenti (org_id, org_short_id, user_id, nume, email, rol)
       VALUES (${orgId}, ${orgShortId || null}, ${userId}, ${name}, ${email}, 'admin')
-      ON CONFLICT DO NOTHING
     `;
+    console.log("Creator added as admin successfully");
   } catch (err: any) {
-    console.error("Agent insert error:", err?.message);
+    console.error("Agent insert error:", err?.message, err?.stack);
   }
 }
 
