@@ -69,6 +69,7 @@ export async function POST(req: Request) {
     const org = await clerk.organizations.createOrganization({
       name,
       createdBy: userId,
+      roleSetKey: "role_set:default",
     });
 
     await clerk.organizations.createOrganizationMembership({
