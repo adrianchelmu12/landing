@@ -114,13 +114,16 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  console.log("POST /api/org/members called");
   const { userId, orgId } = await auth();
+  console.log("Auth result:", { userId, orgId });
   if (!userId) return Response.json({ error: "Neautentificat" }, { status: 401 });
   if (!orgId) return Response.json({ error: "Fără organizație" }, { status: 400 });
 
   try {
     const body = await req.json();
     const { email, role } = body;
+    console.log("Body:", { email, role });
     if (!email) return Response.json({ error: "Emailul este obligatoriu" }, { status: 400 });
 
     const clerkRole = role === "admin" ? "admin" : "basic_member";
@@ -137,7 +140,9 @@ export async function POST(req: Request) {
 
     return Response.json({ id: inv.id, email: inv.emailAddress, status: inv.status, role }, { status: 201 });
   } catch (err: any) {
-    console.error("Invite error:", err?.message);
+    console.error("Invite error:", err?.message, err?.stack);
     return Response.json({ error: err?.message || "Eroare server" }, { status: 500 });
   }
 }
+
+console.log("API route module loaded: members");

@@ -10,10 +10,7 @@ export default clerkMiddleware(async (auth, req) => {
     if (!userId) {
       return Response.json({ error: "Neautentificat" }, { status: 401 });
     }
-    return;
-  }
-
-  if (isDashboard(req)) {
+  } else if (isDashboard(req)) {
     await auth.protect();
   }
 });
