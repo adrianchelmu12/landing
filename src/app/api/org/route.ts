@@ -68,24 +68,27 @@ export async function PUT(req: Request) {
 
       if (name) metaFields.agencyName = name;
 
+      const current = await clerk.organizations.getOrganization({ organizationId: orgId });
+      const currentMeta = (current.publicMetadata || {}) as Record<string, unknown>;
+      const mergedMeta = { ...currentMeta, ...metaFields };
+
       if (logo?.size > 0) {
-        const updated = await clerk.organizations.updateOrganizationLogo(orgId, {
+        const logoResult = await clerk.organizations.updateOrganizationLogo(orgId, {
           file: logo,
           uploaderUserId: userId,
         });
+        mergedMeta.agencyLogo = logoResult.imageUrl;
         await clerk.organizations.updateOrganization(orgId, {
           ...(name ? { name } : {}),
-          publicMetadata: metaFields,
+          publicMetadata: mergedMeta,
         } as any);
-        return Response.json({ name: updated.name, imageUrl: updated.imageUrl });
+        return Response.json({ name: logoResult.name, imageUrl: logoResult.imageUrl });
       }
 
       if (name || Object.keys(metaFields).length > 0) {
-        const current = await clerk.organizations.getOrganization({ organizationId: orgId });
-        const publicMetadata = { ...(current.publicMetadata || {}), ...metaFields };
         const updated = await clerk.organizations.updateOrganization(orgId, {
           ...(name ? { name } : {}),
-          publicMetadata,
+          publicMetadata: mergedMeta,
         } as any);
         return Response.json({ name: updated.name, imageUrl: updated.imageUrl });
       }
