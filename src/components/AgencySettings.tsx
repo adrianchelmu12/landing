@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useOrganization, useOrganizationList, CreateOrganization } from "@clerk/nextjs";
+import { useOrganization, useOrganizationList } from "@clerk/nextjs";
 
 export function AgencySettings() {
   const { organization, isLoaded: orgLoaded } = useOrganization();
-  const { isLoaded: listLoaded, userMemberships } = useOrganizationList({
+  const { isLoaded: listLoaded, userMemberships, setActive } = useOrganizationList({
     userMemberships: true,
   });
+
+  const activeOrgId = organization?.id || userMemberships?.data?.[0]?.organization?.id;
 
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -24,20 +26,22 @@ export function AgencySettings() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!orgLoaded || !listLoaded) return;
+    if (!organization && userMemberships?.data?.[0] && setActive) {
+      setActive({ organization: userMemberships.data[0].organization.id });
+    }
+  }, [orgLoaded, listLoaded, organization, userMemberships, setActive]);
+
+  useEffect(() => {
     if (organization) {
       const md = (organization.publicMetadata || {}) as Record<string, unknown>;
-      const params = new URLSearchParams(window.location.search);
-      const passedName = params.get("orgName") || "";
-      setName(passedName || (md.agencyName as string) || organization.name || "");
+      setName((md.agencyName as string) || organization.name || "");
       setAddress((md.agencyAddress as string) || "");
       setCity((md.agencyCity as string) || "");
       setCounty((md.agencyCounty as string) || "");
       setPhone((md.agencyPhone as string) || "");
       setEmail((md.agencyEmail as string) || "");
       setLogoPreview((md.agencyLogo as string) || organization.imageUrl || null);
-      if (passedName) {
-        window.history.replaceState({}, "", "/dashboard/settings");
-      }
     }
   }, [organization]);
 
@@ -67,7 +71,7 @@ export function AgencySettings() {
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !organization?.id) return;
+    if (!name.trim() || !activeOrgId) return;
     setSaving(true);
     setMessage("");
 
@@ -76,7 +80,7 @@ export function AgencySettings() {
         const formData = new FormData();
         formData.append("logo", logoFile);
         formData.append("name", name);
-        formData.append("orgId", organization.id);
+        formData.append("orgId", activeOrgId);
         formData.append("agencyAddress", address);
         formData.append("agencyCity", city);
         formData.append("agencyCounty", county);
@@ -91,7 +95,7 @@ export function AgencySettings() {
         if (result.imageUrl) setLogoPreview(result.imageUrl);
       } else {
         await saveToApi({
-          orgId: organization.id,
+          orgId: activeOrgId,
           name,
           agencyName: name,
           agencyAddress: address,
@@ -131,9 +135,14 @@ export function AgencySettings() {
         </Link>
         <h2 className="text-lg font-semibold text-foreground mb-3">Creează-ți agenția</h2>
         <p className="text-sm text-muted mb-6">
-          Pentru a personaliza profilul și a accesa CRM-ul, creează mai întâi o agenție.
+          Pentru a personaliza profilul, creează mai întâi o agenție din dashboard.
         </p>
-        <CreateOrganization afterCreateOrganizationUrl="/dashboard/settings" />
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition-colors"
+        >
+          Mergi la dashboard
+        </Link>
       </div>
     );
   }

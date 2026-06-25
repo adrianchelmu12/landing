@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useOrganizationList } from "@clerk/nextjs";
 
 export function CreateAgencyCard() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
   const { createOrganization } = useOrganizationList();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +32,7 @@ export function CreateAgencyCard() {
         body: JSON.stringify({ orgId: org.id, name: name.trim(), agencyName: name.trim() }),
       });
 
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "A apărut o eroare.");
     } finally {
