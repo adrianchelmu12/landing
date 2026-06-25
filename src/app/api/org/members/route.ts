@@ -37,7 +37,7 @@ export async function GET() {
 
     const [membershipList, invitationList] = await Promise.all([
       clerk.organizations.getOrganizationMembershipList({ organizationId: orgId, limit: 50 }),
-      clerk.organizations.getOrganizationInvitationList({ organizationId: orgId, status: "pending", limit: 50 }),
+      clerk.organizations.getOrganizationInvitationList({ organizationId: orgId, status: ["pending"], limit: 50 }),
     ]);
 
     const members = membershipList.data.map((m) => ({
