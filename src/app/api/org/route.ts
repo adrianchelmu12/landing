@@ -1,7 +1,28 @@
 import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
+import { initDb, upsertOrganization } from "@/db";
 
 const getClerkClient = () => createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
+
+async function syncToDb(clerkId: string, name: string, metadata: Record<string, unknown>, imageUrl?: string) {
+  try {
+    if (!process.env.DATABASE_URL) return;
+    await initDb();
+    await upsertOrganization({
+      clerkId,
+      name,
+      slug: undefined,
+      logoUrl: imageUrl ?? (metadata.agencyLogo as string) ?? undefined,
+      email: (metadata.agencyEmail as string) ?? undefined,
+      phone: (metadata.agencyPhone as string) ?? undefined,
+      address: (metadata.agencyAddress as string) ?? undefined,
+      city: (metadata.agencyCity as string) ?? undefined,
+      county: (metadata.agencyCounty as string) ?? undefined,
+    });
+  } catch (err: any) {
+    console.error("Neon sync error:", err?.message);
+  }
+}
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -27,6 +48,8 @@ export async function POST(req: Request) {
     await clerk.organizations.updateOrganization(org.id, {
       publicMetadata: { agencyName: name },
     } as any);
+
+    await syncToDb(org.id, name, { agencyName: name });
 
     return Response.json(org, { status: 201 });
   } catch (err: any) {
@@ -72,25 +95,31 @@ export async function PUT(req: Request) {
       const currentMeta = (current.publicMetadata || {}) as Record<string, unknown>;
       const mergedMeta = { ...currentMeta, ...metaFields };
 
+      let newLogoUrl: string | undefined;
+
       if (logo?.size > 0) {
         const logoResult = await clerk.organizations.updateOrganizationLogo(orgId, {
           file: logo,
           uploaderUserId: userId,
         });
         mergedMeta.agencyLogo = logoResult.imageUrl;
+        newLogoUrl = logoResult.imageUrl;
         await clerk.organizations.updateOrganization(orgId, {
           ...(name ? { name } : {}),
           publicMetadata: mergedMeta,
         } as any);
-        return Response.json({ name: logoResult.name, imageUrl: logoResult.imageUrl });
       }
 
-      if (name || Object.keys(metaFields).length > 0) {
-        const updated = await clerk.organizations.updateOrganization(orgId, {
-          ...(name ? { name } : {}),
-          publicMetadata: mergedMeta,
-        } as any);
-        return Response.json({ name: updated.name, imageUrl: updated.imageUrl });
+      if (name || Object.keys(metaFields).length > 0 || logo?.size) {
+        if (!logo?.size) {
+          await clerk.organizations.updateOrganization(orgId, {
+            ...(name ? { name } : {}),
+            publicMetadata: mergedMeta,
+          } as any);
+        }
+
+        await syncToDb(orgId, name || current.name, mergedMeta, newLogoUrl);
+        return Response.json({ name: name || current.name, imageUrl: newLogoUrl || current.imageUrl });
       }
       return Response.json({ error: "Niciun fișier" }, { status: 400 });
     }
@@ -115,6 +144,8 @@ export async function PUT(req: Request) {
       ...(name ? { name } : {}),
       publicMetadata,
     } as any);
+
+    await syncToDb(orgId, name || current.name, publicMetadata, undefined);
 
     return Response.json(updated);
   } catch (err: any) {
