@@ -2,6 +2,7 @@ export const CREATE_ORGANIZATIONS_TABLE = `
   CREATE TABLE IF NOT EXISTS organizations (
     id TEXT PRIMARY KEY,
     clerk_id TEXT UNIQUE NOT NULL,
+    short_id TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     slug TEXT,
     logo_url TEXT,

@@ -17,6 +17,7 @@ export async function initDb() {
 export interface OrganizationRow {
   id: string;
   clerk_id: string;
+  short_id: string;
   name: string;
   slug: string | null;
   logo_url: string | null;
@@ -27,6 +28,17 @@ export interface OrganizationRow {
   county: string | null;
   created_at: string;
   updated_at: string;
+}
+
+function generateShortId(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  for (let i = 0; i < 8; i++) {
+    result += chars[bytes[i] % chars.length];
+  }
+  return result;
 }
 
 export async function upsertOrganization(data: {
@@ -41,9 +53,11 @@ export async function upsertOrganization(data: {
   county?: string;
 }) {
   const db = sql();
+  const shortId = generateShortId();
+
   await db`
-    INSERT INTO organizations (clerk_id, name, slug, logo_url, email, phone, address, city, county)
-    VALUES (${data.clerkId}, ${data.name}, ${data.slug ?? null}, ${data.logoUrl ?? null}, ${data.email ?? null}, ${data.phone ?? null}, ${data.address ?? null}, ${data.city ?? null}, ${data.county ?? null})
+    INSERT INTO organizations (clerk_id, short_id, name, slug, logo_url, email, phone, address, city, county)
+    VALUES (${data.clerkId}, ${shortId}, ${data.name}, ${data.slug ?? null}, ${data.logoUrl ?? null}, ${data.email ?? null}, ${data.phone ?? null}, ${data.address ?? null}, ${data.city ?? null}, ${data.county ?? null})
     ON CONFLICT (clerk_id)
     DO UPDATE SET
       name = EXCLUDED.name,
@@ -55,6 +69,14 @@ export async function upsertOrganization(data: {
       city = EXCLUDED.city,
       county = EXCLUDED.county;
   `;
+
+  return shortId;
+}
+
+export async function getOrganizationByShortId(shortId: string): Promise<OrganizationRow | null> {
+  const db = sql();
+  const rows = await db`SELECT * FROM organizations WHERE short_id = ${shortId}`;
+  return (rows[0] as OrganizationRow) ?? null;
 }
 
 export async function getAllOrganizations(): Promise<OrganizationRow[]> {
