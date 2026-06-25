@@ -1,7 +1,8 @@
 "use client";
 
-import { useOrganizationList, CreateOrganization } from "@clerk/nextjs";
+import { useOrganizationList } from "@clerk/nextjs";
 import { AdminSection } from "@/components/AdminSection";
+import { CreateAgencyCard } from "@/components/CreateAgencyCard";
 
 export default function DashboardPage() {
   const { isLoaded, userMemberships } = useOrganizationList({
@@ -28,21 +29,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           {!hasOrganization ? (
-            <div className="bg-white rounded-2xl border border-primary/20 p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-foreground mb-3">
-                Creează-ți agenția
-              </h2>
-              <p className="text-muted mb-6 max-w-md mx-auto">
-                Pentru a accesa CRM-ul și a începe să gestionezi proprietăți, clienți și tranzacții, creează mai întâi o agenție.
-              </p>
-              <CreateOrganization afterCreateOrganizationUrl="/dashboard" />
-            </div>
+            <CreateAgencyCard />
           ) : (
             <>
               <div className="bg-white rounded-2xl border border-border p-8">
