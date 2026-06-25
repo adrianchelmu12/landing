@@ -5,17 +5,31 @@ import { neon } from "@neondatabase/serverless";
 const getClerkClient = () => createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
 
 function db() {
-  return neon(process.env.DATABASE_URL!);
+  const url = process.env.DATABASE_URL;
+  if (!url) return null;
+  return neon(url);
 }
 
 async function getCustomRoles(orgId: string) {
   try {
-    const rows = await db()`SELECT email, custom_role FROM member_roles WHERE org_id = ${orgId}`;
+    const client = db();
+    if (!client) return {};
+    const rows = await client`SELECT email, custom_role FROM member_roles WHERE org_id = ${orgId}`;
     const map: Record<string, string> = {};
     for (const r of rows) map[r.email] = r.custom_role;
     return map;
   } catch {
     return {};
+  }
+}
+
+async function saveCustomRole(orgId: string, email: string, role: string) {
+  try {
+    const client = db();
+    if (!client) return;
+    await client`INSERT INTO member_roles (org_id, email, custom_role) VALUES (${orgId}, ${email}, ${role}) ON CONFLICT (org_id, email) DO UPDATE SET custom_role = EXCLUDED.custom_role`;
+  } catch (e: any) {
+    console.error("member_roles insert error:", e?.message);
   }
 }
 
@@ -108,11 +122,7 @@ export async function POST(req: Request) {
       role: clerkRole,
     });
 
-    try {
-      await db()`INSERT INTO member_roles (org_id, email, custom_role) VALUES (${orgId}, ${email}, ${role || "agent"}) ON CONFLICT (org_id, email) DO UPDATE SET custom_role = EXCLUDED.custom_role`;
-    } catch (e: any) {
-      console.error("member_roles insert error:", e?.message);
-    }
+    await saveCustomRole(orgId, email, role || "agent");
 
     return Response.json({ id: inv.id, email: inv.emailAddress, status: inv.status, role }, { status: 201 });
   } catch (err: any) {
