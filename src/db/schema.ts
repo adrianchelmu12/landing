@@ -11,9 +11,27 @@ export const CREATE_ORGANIZATIONS_TABLE = `
     address TEXT,
     city TEXT,
     county TEXT,
+    landing_enabled BOOLEAN DEFAULT false,
+    landing_primary_color TEXT DEFAULT '#2563eb',
+    landing_secondary_color TEXT DEFAULT '#f59e0b',
+    landing_about_text TEXT,
+    landing_experience_years TEXT,
+    company_name TEXT,
+    cui TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
   );
+`;
+
+export const ALTER_ORGANIZATIONS_LANDING = `
+  ALTER TABLE organizations
+  ADD COLUMN IF NOT EXISTS landing_enabled BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS landing_primary_color TEXT DEFAULT '#2563eb',
+  ADD COLUMN IF NOT EXISTS landing_secondary_color TEXT DEFAULT '#f59e0b',
+  ADD COLUMN IF NOT EXISTS landing_about_text TEXT,
+  ADD COLUMN IF NOT EXISTS landing_experience_years TEXT,
+  ADD COLUMN IF NOT EXISTS company_name TEXT,
+  ADD COLUMN IF NOT EXISTS cui TEXT;
 `;
 
 export const CREATE_UPDATED_AT_FUNCTION = `

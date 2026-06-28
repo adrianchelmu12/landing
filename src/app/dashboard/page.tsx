@@ -42,7 +42,7 @@ export default function DashboardPage() {
                   Accesează dashboard-ul complet pentru gestionarea proprietăților, clienților, pipeline-ului de vânzări și mult mai mult.
                 </p>
                 <a
-                  href="https://imob-psi.vercel.app/admin"
+                  href={`${process.env.NEXT_PUBLIC_CRM_URL || "https://imob-jet-gamma.vercel.app"}/admin`}
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-lg shadow-primary/25"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

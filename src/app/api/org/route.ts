@@ -152,6 +152,7 @@ export async function PUT(req: Request) {
         }
 
         await syncToDb(orgId, name || current.name, mergedMeta, newLogoUrl);
+        await addCreatorAsAgent(userId, orgId);
         return Response.json({ name: name || current.name, imageUrl: newLogoUrl || current.imageUrl });
       }
       return Response.json({ error: "Niciun fișier" }, { status: 400 });
@@ -179,6 +180,7 @@ export async function PUT(req: Request) {
     } as any);
 
     await syncToDb(orgId, name || current.name, publicMetadata, undefined);
+    await addCreatorAsAgent(userId, orgId);
 
     return Response.json(updated);
   } catch (err: any) {
